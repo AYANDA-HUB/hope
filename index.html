@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuraSect – Login / Register</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="home-container">
+    <h1>Welcome to AuraSect</h1>
+    <button id="theme-toggle">Toggle Dark Mode</button>
+
+    <!-- REGISTER -->
+    <div class="form-container">
+      <h2>Register</h2>
+
+      <input id="reg-fullname" placeholder="Full Name" />
+      <input id="reg-phone" placeholder="SA Phone Number (10 digits)" />
+      <input id="reg-school" placeholder="School ID (e.g. 3)" />
+      <input id="reg-pass" type="password" placeholder="Strong Password" />
+
+      <p class="small">Min 6 chars, 1 uppercase & 1 lowercase</p>
+
+      <select id="role">
+        <option value="student">Student</option>
+        <option value="instructor">Instructor</option>
+      </select>
+
+      <button onclick="register()">Register</button>
+      <p id="reg-msg"></p>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="form-container">
+      <h2>Login</h2>
+      <input id="login-user" placeholder="Username (e.g. U1023)" />
+      <input id="login-pass" type="password" placeholder="Password" />
+      <button onclick="login()">Login</button>
+      <p id="log-msg"></p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

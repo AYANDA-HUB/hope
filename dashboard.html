@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraSect Dashboard</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="./channels/styles1.css">
+  <link rel="stylesheet" href="./chat/styles2.css">
+  <link rel="stylesheet" href="./chatbot/styles3.css">
+  <link rel="stylesheet" href="./subjects/styles4.css">
+  <link rel="stylesheet" href="./schools/styles5.css">
+  <link rel="stylesheet" href="./subscription/styles6.css">
+  <link rel="stylesheet" href="./competitions/styles7.css">
+
+  <script src="./channels/index1.js" defer></script>
+  <script src="./chat/index2.js" defer></script>
+  <script src="./chatbot/index3.js" defer></script>
+  <script src="./subjects/index4.js" defer></script>
+  <script src="./schools/index5.js" defer></script>
+  <script src="./subscription/index6.js" defer></script>
+  <script src="./competitions/index7.js" defer></script>
+  <script src="./channels/followers.js"></script>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+  </script>
+</head>
+<body>
+
+  <button id="sidebarToggle" class="sidebar-toggle">☰</button>
+
+  <div id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <h2>AuraSect</h2>
+      <div id="userProfile" class="user-profile-mini">
+        <span id="userNameDisplay">Guest</span>
+      </div>
+    </div>
+
+    <div class="sidebar-content">
+      <ul id="sidebarMenu"></ul>
+    </div>
+
+    <div class="sidebar-footer">
+      <button id="themeToggle" class="btn-theme">
+        <i class="fas fa-moon"></i> <span>Dark Mode</span>
+      </button>
+      <button id="logoutBtn" class="btn-logout">
+        <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+  <div id="mainContent">
+
+    <div id="home" class="section active">
+      <h2 class="center-text">Welcome to AuraSect Dashboard</h2>
+      <p class="center-text">Your learning and management system.</p>
+    </div>
+
+    <div id="subscription" class="section">
+      <h3>💳 Subscription Management</h3>
+      <div id="adminSubscription" style="display:none;">
+        <h4>Generate Vouchers</h4>
+        <div class="form-group">
+          <select id="vPlan">
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+          <input type="number" id="vAmount" placeholder="Amount (R)">
+          <input type="number" id="vQty" placeholder="Quantity">
+          <input type="date" id="vExpiry">
+          <button id="generateVouchersBtn">Generate</button>
+        </div>
+        <h4>Active Vouchers</h4>
+        <ul id="adminVoucherList"></ul>
+      </div>
+
+      <div id="studentSubscription" style="display:none;">
+        <div id="subStatusCard" class="status-card">
+          <p>Status: <strong id="currentStatus">Loading...</strong></p>
+          <p id="expiryDateText"></p>
+        </div>
+        <h4>Redeem Voucher</h4>
+        <input id="voucherCodeInput" placeholder="Enter 12-digit code">
+        <button id="redeemBtn">Redeem</button>
+        <h4>Pay with Card (Mock)</h4>
+        <select id="cardPlan">
+          <option value="monthly">Monthly - R65</option>
+          <option value="yearly">Yearly - R520</option>
+        </select>
+        <button id="cardPayBtn">Pay Now</button>
+      </div>
+    </div>
+
+    <div id="schools" class="section">
+      <h3>🏫 Schools</h3>
+      <div id="schoolForm" class="school-form">
+        <input id="schoolName" placeholder="School Name">
+        <input id="schoolDistrict" placeholder="District">
+        <input id="schoolProvince" placeholder="Province">
+        <button id="addSchoolBtn">➕ Add School</button>
+      </div>
+      <ul id="schoolsList" class="schools-list"></ul>
+    </div>
+
+    <div id="admins" class="section">
+      <h3>👤 Admins</h3>
+      <input id="adminFullName" placeholder="Full Name">
+      <input id="adminPhone" placeholder="Phone Number">
+      <input id="adminPassword" type="password" placeholder="Password">
+      <button id="createAdminBtn">Create Admin</button>
+      <ul id="adminsList"></ul>
+    </div>
+
+    <div id="chat" class="section">
+      <div class="chat-container">
+        <div class="chat-sidebar">
+          <div class="chat-tabs">
+            <button class="tab-btn active" id="oneToOneTab">
+              <i class="fas fa-comment-dots"></i>
+              <span>One-to-One</span>
+            </button>
+            <button class="tab-btn" id="groupTab">
+              <i class="fas fa-users"></i>
+              <span>Groups</span>
+            </button>
+            <button class="tab-btn" id="communityTab">
+              <i class="fas fa-university"></i>
+              <span>Community</span>
+            </button>
+          </div>
+          <div class="chat-sidebar-header">
+            <div class="search-wrapper">
+              <input type="text" id="userSearch" placeholder="Search...">
+              <button id="refreshRecentsBtn" title="Recent Contacts">
+                <i class="fas fa-history"></i>
+              </button>
+            </div>
+          </div>
+          <div id="user-list" class="user-list">
+            <p class="empty-state">Select a mode above to start</p>
+          </div>
+        </div>
+
+        <div class="chat-main">
+          <div id="chat-header" class="chat-header">
+            <h4 id="activeChatPartner">Select a conversation</h4>
+            <div id="replyPreview"></div>
+          </div>
+          <div id="chatBox" class="chat-messages-area">
+            <div class="chat-placeholder">
+              <p>Welcome to AuraSect Chat.</p>
+            </div>
+          </div>
+          <div class="chat-footer">
+            <div id="recordingContainer" style="display:none;">
+              <canvas id="waveCanvas" width="150" height="30"></canvas>
+              <span id="recordingTimer">00:00</span>
+            </div>
+            <input type="text" id="chatInput" placeholder="Type your message..." disabled>
+            <input type="file" id="chatImageInput" accept="image/*" hidden>
+            <button id="chatImageBtn"><i class="fas fa-image"></i></button>
+            <button id="chatVoiceBtn"><i class="fas fa-microphone"></i></button>
+            <button id="chatSendBtn" class="send-btn" disabled><i class="fas fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="channels" class="section">
+      <div id="channels-root"></div>
+    </div>
+
+    <div id="subjects" class="section">
+      <h3>📚 Subjects</h3>
+      <div id="instructorSubjects" style="display:none;">
+        <h4>Create Subject</h4>
+        <input id="subjectName" placeholder="Subject Name">
+        <input id="subjectCode" placeholder="Subject Code">
+        <input id="subjectKey" placeholder="Enrollment Key">
+        <button id="createSubjectBtn">Create Subject</button>
+      </div>
+      <div id="studentSubjects" style="display:none;">
+        <h4>Available Subjects</h4>
+        <ul id="studentSubjectsList"></ul>
+      </div>
+    </div>
+
+    <div id="chatbot" class="section">
+      <div class="chatbot-header">
+        <h3>🤖 AuraSect AI</h3>
+        <button id="newChatBtn">➕</button>
+      </div>
+      <div id="chatbotBox" class="gemini-style-box"></div>
+      <div class="gemini-input-container">
+        <div class="input-wrapper">
+          <input id="chatbotInput" placeholder="Ask AuraSectAi...">
+          <div class="input-actions">
+            <input type="file" id="chatbotImageInput" accept="image/*" hidden>
+            <button id="chatbotImageBtn"><i class="fas fa-image"></i></button>
+            <button id="voiceToggleBtn"><i class="fas fa-volume-up"></i></button>
+            <button id="chatbotSendBtn"><i class="fas fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="competitions" class="section">
+      <h3>🏆 Competitions</h3>
+      <div id="adminCompetitionForm" style="display:none;" class="form-group">
+        <h4>Create New Competition</h4>
+        <input id="compTitle" placeholder="Title">
+        <button id="createCompBtn">Create Competition</button>
+      </div>
+      <div id="competitionsList" class="competitions-grid"></div>
+    </div>
+
+  </div> 
+
+  <div id="createGroupModal" class="custom-modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">Create New Group</div>
+      <input type="text" id="newGroupNameInput" class="modal-input" placeholder="Group name...">
+      <div class="modal-footer">
+        <button onclick="closeGroupModal()">Cancel</button>
+        <button onclick="executeGroupCreation()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

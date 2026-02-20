@@ -1,0 +1,161 @@
+:root {
+  --bg: #f7f7f7;
+  --text: #222;
+  --accent: #0077cc;
+  --card: #fff;
+  --shadow: rgba(0,0,0,0.1);
+}
+
+[data-theme="dark"] {
+  --bg: #121212;
+  --text: #eee;
+  --accent: #0abde3;
+  --card: #1e1e1e;
+  --shadow: rgba(0,0,0,0.5);
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.home-container {
+  max-width: 500px;
+  margin: 50px auto;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 15px;
+  box-shadow: 0 6px 20px var(--shadow);
+  text-align: center;
+}
+
+.form-container {
+  margin: 20px 0;
+}
+
+input, select, button {
+  display: block;
+  margin: 10px auto;
+  padding: 10px;
+  width: 80%;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+/* Dashboard styles */
+.sidebar {
+  width: 70px;
+  background: var(--card);
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  padding: 20px;
+  box-shadow: 2px 0 6px var(--shadow);
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar li {
+  margin: 15px 0;
+  cursor: pointer;
+}
+
+.topbar {
+  height: 60px;
+  background: var(--card);
+  margin-left: 200px;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 6px var(--shadow);
+}
+
+.dashboard-content {
+  margin-left: 200px;
+  padding: 20px;
+}
+
+.section { display: none; }
+
+.section.active { display: block; }
+
+#chat-messages {
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--bg);
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+#calendar-container {
+  max-width: 600px;
+  margin: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 10px;
+}
+.chat-container {
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg);
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+
+.chat-message {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.chat-message.bot .icon {
+  background: var(--accent);
+  color: white;
+}
+
+.chat-message.user .icon {
+  background: #aaa;
+  color: white;
+}
+
+.chat-message .icon {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 35px;
+  margin-right: 10px;
+}
+
+.chat-message .text {
+  background: #eee;
+  padding: 8px 12px;
+  border-radius: 10px;
+  max-width: 70%;
+}
+
+.chat-message.bot .text {
+  background: var(--accent);
+  color: white;
+}

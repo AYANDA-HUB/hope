@@ -1,0 +1,5 @@
+fastapi==0.95.2
+uvicorn==0.22.0
+python-multipart==0.0.20
+mysql-connector-python==9.5.0
+passlib[bcrypt]==1.7.4

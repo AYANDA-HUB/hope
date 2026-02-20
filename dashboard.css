@@ -1,0 +1,248 @@
+/* General Styles */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f5f5f5;
+  transition: background-color 0.3s;
+}
+
+/* Centered text */
+.center-text {
+  text-align: center;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -250px; /* hidden by default */
+  width: 250px;
+  height: 100%;
+  background-color: #1e1e1e;
+  color: #fff;
+  padding: 20px;
+  box-sizing: border-box;
+  transition: left 0.3s;
+  z-index: 1000;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar ul li {
+  padding: 12px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.sidebar ul li:hover {
+  background-color: #333;
+}
+
+.theme-toggle {
+  margin-top: 20px;
+  padding: 10px;
+  width: 100%;
+  cursor: pointer;
+}
+
+/* Sidebar overlay */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background-color: rgba(0,0,0,0.4);
+  z-index: 900;
+  transition: width 0.3s;
+}
+
+/* Main content */
+#mainContent {
+  margin-left: 0;
+  padding: 20px;
+  transition: margin-left 0.3s;
+}
+
+/* Active section */
+.section {
+  display: none;
+}
+
+.section.active {
+  display: block;
+}
+
+/* Sidebar toggle button */
+.sidebar-toggle {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1100;
+  font-size: 24px;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* Chat box */
+.chat-box {
+  border: 1px solid #ccc;
+  height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  background-color: #fff;
+}
+
+/* Dark mode */
+body[data-theme="dark"] {
+  background-color: #121212;
+  color: #fff;
+}
+
+body[data-theme="dark"] .sidebar {
+  background-color: #1c1c1c;
+}
+
+body[data-theme="dark"] .chat-box {
+  background-color: #222;
+  color: #fff;
+}
+/* Add inside existing CSS */
+
+/* Channels & Chatbot boxes */
+.channels-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.channel-btn {
+  padding: 10px 15px;
+  cursor: pointer;
+  background-color: #333;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+}
+
+.channel-btn:hover {
+  background-color: #555;
+}
+
+/* Chatbot box similar to chat */
+#chatbotBox {
+  border: 1px solid #ccc;
+  height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  background-color: #fff;
+}
+.subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.subject-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s;
+  border-left: 5px solid #4A90E2;
+}
+
+.subject-card:hover {
+  transform: translateY(-5px);
+}
+
+.data-list {
+  list-style: none;
+  padding: 0;
+}
+
+.data-list li {
+  background: #f8f9fa;
+  margin-bottom: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+/* Sidebar Layout Fix */
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: fixed;
+  left: -250px; /* Hidden by default */
+  width: 250px;
+  transition: 0.3s;
+  z-index: 1000;
+}
+
+/* Container for the menu items */
+.sidebar-content {
+  flex: 1; /* Takes up all available space */
+  overflow-y: auto;
+}
+
+/* Footer styling to keep buttons at the bottom */
+.sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: inherit; /* Matches sidebar color */
+}
+
+/* Button Styling */
+.btn-theme, .btn-logout {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-theme {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: inherit;
+}
+
+.btn-logout {
+  background-color: #ff4d4d;
+  color: white;
+}
+
+.btn-logout:hover {
+  background-color: #e60000;
+}
+
+/* Dark Mode adjustment for the footer */
+body.dark-mode .sidebar-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+body.dark-mode .btn-theme {
+  background-color: rgba(255, 255, 255, 0.1);
+}

@@ -1,0 +1,138 @@
+#subjects {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* Long Buttons */
+.long-btn {
+  width: 100%;
+  text-align: left;
+  padding: 18px;
+  margin-bottom: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.long-btn:hover {
+  background: #f0f7ff;
+  border-color: #007bff;
+  transform: translateX(5px);
+}
+
+/* Create Button */
+.create-main-btn {
+  background: #28a745;
+  color: white;
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  margin-top: 10px;
+}
+
+/* Lists with Dates */
+.dated-list {
+  list-style: none;
+  padding: 0;
+}
+
+.dated-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  color: #333;
+}
+
+.dated-list li span {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+/* Inputs */
+input, textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.back-link {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+.header-row { display: flex; justify-content: space-between; align-items: center; }
+.create-btn { background: #28a745; color: white; padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; }
+
+.long-btn {
+    width: 100%; text-align: left; padding: 15px; margin: 8px 0;
+    border: 1px solid #ddd; border-radius: 8px; background: #fff;
+    cursor: pointer; transition: 0.2s; font-weight: bold;
+}
+.long-btn:hover { border-color: #007bff; background: #f8fbff; }
+
+.dated-list { list-style: none; padding: 0; }
+.dated-list li { 
+    display: flex; justify-content: space-between; 
+    padding: 10px; border-bottom: 1px solid #eee; 
+}
+.dated-list li span { color: #888; font-size: 0.8em; }
+
+.action-row { display: flex; gap: 10px; margin: 20px 0; }
+.action-btn { flex: 1; padding: 12px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+
+.hidden { display: none; }
+.enroll-box {
+    background: #fff3cd;
+    border: 1px solid #ffeeba;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.quiz-container {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+#quizAnswers {
+    width: 100%;
+    margin: 15px 0;
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 15px;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    resize: vertical;
+}
+
+.submit-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+}
+
+.submit-btn:hover {
+    background: #0056b3;
+}

@@ -1,0 +1,398 @@
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, UploadFile, File
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_, or_, func, desc
+from typing import Dict, List
+import logging
+import os
+import shutil
+from datetime import datetime
+
+from services.database import get_db
+from services.auth_service.dependencies import get_current_user
+from services.auth_service.models import User
+from .models import (
+    ChatMessage, Group, GroupMember, GroupMessage, 
+    CommunityMessage, CommunityReaction, ChatReaction, GroupMessageReaction,
+    GroupReadStatus
+)
+from .schemas import (
+    ChatMessageCreate, ChatMessageResponse,
+    GroupCreate, GroupMessageCreate, GroupMessageResponse,
+    CommunityMessageCreate, CommunityMessageResponse,
+    MessageReactionCreate, MessageReactionResponse
+)
+
+logger = logging.getLogger(__name__)
+
+# ------------------------- Connection Manager -------------------------
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[int, WebSocket] = {}
+        self.group_connections: Dict[int, List[WebSocket]] = {}
+        self.community_connections: Dict[int, List[WebSocket]] = {}
+
+    async def connect(self, user_id: int, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections[user_id] = websocket
+
+    def disconnect(self, user_id: int):
+        if user_id in self.active_connections:
+            del self.active_connections[user_id]
+
+    async def send_personal_message(self, message: dict, user_id: int):
+        if user_id in self.active_connections:
+            try:
+                await self.active_connections[user_id].send_json(message)
+            except Exception:
+                self.disconnect(user_id)
+
+    async def connect_group(self, group_id: int, websocket: WebSocket):
+        await websocket.accept()
+        self.group_connections.setdefault(group_id, []).append(websocket)
+
+    async def send_group_message(self, group_id: int, message: dict):
+        sockets = self.group_connections.get(group_id, [])
+        for ws in sockets:
+            try:
+                await ws.send_json(message)
+            except Exception:
+                sockets.remove(ws)
+
+    async def connect_community(self, school_id: int, websocket: WebSocket):
+        await websocket.accept()
+        self.community_connections.setdefault(school_id, []).append(websocket)
+
+    async def send_community_message(self, school_id: int, message: dict):
+        sockets = self.community_connections.get(school_id, [])
+        for ws in sockets:
+            try:
+                await ws.send_json(message)
+            except Exception:
+                sockets.remove(ws)
+
+manager = ConnectionManager()
+router = APIRouter(prefix="/chat_messages", tags=["Chat Messages"])
+
+# ------------------------- WebSockets -------------------------
+@router.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: int):
+    await manager.connect(user_id, websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except Exception:
+        manager.disconnect(user_id)
+
+@router.websocket("/ws/group/{group_id}")
+async def websocket_group(websocket: WebSocket, group_id: int):
+    await manager.connect_group(group_id, websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except Exception:
+        pass
+
+@router.websocket("/ws/community/{school_id}")
+async def websocket_community(websocket: WebSocket, school_id: int):
+    await manager.connect_community(school_id, websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except Exception:
+        pass
+
+# ------------------------- Profile & Read Status Endpoints -------------------------
+
+@router.post("/upload_profile_picture")
+async def upload_profile_picture(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    upload_dir = "static/profiles"
+    os.makedirs(upload_dir, exist_ok=True)
+    file_ext = file.filename.split(".")[-1]
+    file_path = f"{upload_dir}/{current_user.id}.{file_ext}"
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    current_user.profile_pic = f"/{file_path}"
+    db.commit()
+    return {"url": current_user.profile_pic}
+
+@router.post("/read/personal/{user_id}")
+def mark_personal_read(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    db.query(ChatMessage).filter(ChatMessage.sender_id == user_id, ChatMessage.receiver_id == current_user.id, ChatMessage.is_seen == False).update({"is_seen": True})
+    db.commit()
+    return {"status": "success"}
+
+@router.post("/read/group/{group_id}")
+def mark_group_read(group_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    status = db.query(GroupReadStatus).filter(GroupReadStatus.user_id == current_user.id, GroupReadStatus.group_id == group_id).first()
+    if status:
+        status.last_read_at = func.now()
+    else:
+        db.add(GroupReadStatus(user_id=current_user.id, group_id=group_id))
+    db.commit()
+    return {"status": "success"}
+
+# ------------------------- Existing Endpoints -------------------------
+@router.get("/recent_chats")
+def get_recent_chats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    try:
+        users = db.query(User).filter(User.school_id == current_user.school_id, User.id != current_user.id).all()
+        inbox = []
+        for user in users:
+            last_msg = db.query(ChatMessage).filter(
+                ((ChatMessage.sender_id == current_user.id) & (ChatMessage.receiver_id == user.id)) |
+                ((ChatMessage.sender_id == user.id) & (ChatMessage.receiver_id == current_user.id))
+            ).order_by(desc(ChatMessage.created_at)).first()
+            unread_count = db.query(ChatMessage).filter(
+                ChatMessage.sender_id == user.id, ChatMessage.receiver_id == current_user.id, ChatMessage.is_seen == False
+            ).count()
+            inbox.append({
+                "id": user.id, "fullname": user.fullname or user.username or "Unknown User",
+                "username": user.username, "last_message": last_msg.message if last_msg else "",
+                "last_message_time": last_msg.created_at.isoformat() if last_msg else None,
+                "unread_count": unread_count, "role": getattr(user, 'role', 'student'),
+                "profile_pic": getattr(user, 'profile_pic', None)
+            })
+        inbox.sort(key=lambda x: x["last_message_time"] or "", reverse=True)
+        return inbox
+    except Exception as e:
+        logger.error(f"Error fetching recent chats: {e}")
+        return []
+
+@router.post("/", response_model=ChatMessageResponse)
+async def send_message(chat_data: ChatMessageCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    receiver = db.query(User).filter(User.id == chat_data.receiver_id).first()
+    if not receiver: raise HTTPException(status_code=404, detail="Receiver not found")
+    new_msg = ChatMessage(
+        sender_id=current_user.id, receiver_id=receiver.id, message=chat_data.message,
+        image_url=chat_data.image_url, voice_note_url=chat_data.voice_note_url,
+        message_type=chat_data.message_type, school_id=current_user.school_id, is_seen=False
+    )
+    db.add(new_msg); db.commit(); db.refresh(new_msg)
+    
+    # Payload for WebSocket
+    ws_payload = {
+        "type": "new_message", "sender_id": current_user.id, "receiver_id": receiver.id,
+        "message": new_msg.message, "image_url": new_msg.image_url, "message_type": new_msg.message_type,
+        "created_at": str(new_msg.created_at)
+    }
+    if new_msg.message_type == "voice":
+        ws_payload["waveform"] = [0.1, 0.5, 0.2, 0.8, 0.4] # Mock waveform data
+
+    await manager.send_personal_message(ws_payload, receiver.id)
+    return new_msg
+
+@router.get("/conversation/{user_id}", response_model=List[ChatMessageResponse])
+def get_conversation(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(ChatMessage).options(joinedload(ChatMessage.reactions)).filter(
+        ((ChatMessage.sender_id == current_user.id) & (ChatMessage.receiver_id == user_id)) |
+        ((ChatMessage.sender_id == user_id) & (ChatMessage.receiver_id == current_user.id))
+    ).order_by(ChatMessage.created_at.asc()).all()
+
+@router.get("/users/search")
+def search_users(query: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(User).filter(User.id != current_user.id, User.school_id == current_user.school_id, User.fullname.ilike(f"%{query}%")).all()
+
+@router.put("/conversation/{user_id}/read")
+def mark_as_read(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    db.query(ChatMessage).filter(ChatMessage.sender_id == user_id, ChatMessage.receiver_id == current_user.id, ChatMessage.is_seen == False).update({"is_seen": True})
+    db.commit()
+    return {"status": "success"}
+
+@router.post("/groups", response_model=GroupCreate)
+def create_group(group: GroupCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != "instructor": raise HTTPException(status_code=403, detail="Only instructors can create groups")
+    new_group = Group(name=group.name, school_id=current_user.school_id, instructor_id=current_user.id)
+    db.add(new_group); db.commit(); db.refresh(new_group)
+    return new_group
+
+@router.post("/groups/{group_id}/add_member")
+def add_group_member(group_id: int, user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    group = db.query(Group).filter(Group.id == group_id).first()
+    if not group: raise HTTPException(404, detail="Group not found")
+    if group.instructor_id != current_user.id: raise HTTPException(403, detail="Only group instructor can add members")
+    db.add(GroupMember(group_id=group_id, user_id=user_id))
+    db.commit()
+    return {"status": "success"}
+
+@router.get("/groups/{group_id}/messages", response_model=List[GroupMessageResponse])
+def get_group_messages(group_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    messages = db.query(GroupMessage).options(joinedload(GroupMessage.reactions)).filter(GroupMessage.group_id==group_id).order_by(GroupMessage.created_at.asc()).all()
+    for msg in messages:
+        sender = db.query(User).filter(User.id == msg.sender_id).first()
+        msg.sender_name = sender.fullname or sender.username if sender else "Unknown"
+    return messages
+
+@router.post("/groups/{group_id}/messages", response_model=GroupMessageResponse)
+async def send_group_message(group_id: int, message: GroupMessageCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    new_msg = GroupMessage(group_id=group_id, sender_id=current_user.id, message=message.message, image_url=message.image_url, message_type=message.message_type)
+    db.add(new_msg); db.commit(); db.refresh(new_msg)
+    sender_name = current_user.fullname or current_user.username
+    
+    ws_payload = {
+        "type": "new_group_message", 
+        "group_id": group_id, 
+        "message": new_msg.message,
+        "sender_name": sender_name
+    }
+    if new_msg.message_type == "voice":
+        ws_payload["waveform"] = [0.2, 0.4, 0.6, 0.4, 0.2]
+
+    await manager.send_group_message(group_id, ws_payload)
+    new_msg.sender_name = sender_name
+    return new_msg
+
+@router.get("/community", response_model=List[CommunityMessageResponse])
+def get_community_messages(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    messages = db.query(CommunityMessage).options(joinedload(CommunityMessage.reactions)).filter(CommunityMessage.school_id==current_user.school_id).order_by(CommunityMessage.created_at.asc()).all()
+    for msg in messages:
+        sender = db.query(User).filter(User.id == msg.sender_id).first()
+        msg.sender_name = sender.fullname or sender.username if sender else "Instructor"
+    return messages
+
+@router.post("/community", response_model=CommunityMessageResponse)
+async def send_community_message(message: CommunityMessageCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    new_message = CommunityMessage(school_id=current_user.school_id, sender_id=current_user.id, message_type=message.message_type, message=message.message, image_url=message.image_url, voice_note_url=message.voice_note_url)
+    db.add(new_message); db.commit(); db.refresh(new_message)
+    sender_name = current_user.fullname or current_user.username
+    
+    ws_payload = {
+        "type": "new_community_message", 
+        "message": new_message.message,
+        "sender_name": sender_name
+    }
+    if new_message.message_type == "voice":
+        ws_payload["waveform"] = [0.1, 0.3, 0.5, 0.3, 0.1]
+
+    await manager.send_community_message(current_user.school_id, ws_payload)
+    new_message.sender_name = sender_name
+    return new_message
+
+# ------------------------- Reaction Logic (Single Reaction Constraint) -------------------------
+@router.post("/react/{msg_type}", response_model=MessageReactionResponse)
+async def add_reaction(msg_type: str, reaction_data: MessageReactionCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    broadcast_payload = {"type": "new_reaction", "message_id": reaction_data.message_id, "user_id": current_user.id, "reaction": reaction_data.reaction}
+    new_rxn = None
+    
+    if msg_type == "personal":
+        msg = db.query(ChatMessage).filter(ChatMessage.id == reaction_data.message_id).first()
+        if not msg: raise HTTPException(404, "Message not found")
+        # Ensure only one reaction per user
+        existing = db.query(ChatReaction).filter(ChatReaction.message_id == reaction_data.message_id, ChatReaction.user_id == current_user.id).first()
+        if existing:
+            existing.reaction = reaction_data.reaction
+            new_rxn = existing
+        else:
+            new_rxn = ChatReaction(message_id=reaction_data.message_id, user_id=current_user.id, reaction=reaction_data.reaction)
+            db.add(new_rxn)
+        db.commit(); db.refresh(new_rxn)
+        target_id = msg.receiver_id if msg.sender_id == current_user.id else msg.sender_id
+        await manager.send_personal_message(broadcast_payload, target_id)
+        
+    elif msg_type == "group":
+        msg = db.query(GroupMessage).filter(GroupMessage.id == reaction_data.message_id).first()
+        if not msg: raise HTTPException(404, "Message not found")
+        existing = db.query(GroupMessageReaction).filter(GroupMessageReaction.message_id == reaction_data.message_id, GroupMessageReaction.user_id == current_user.id).first()
+        if existing:
+            existing.reaction = reaction_data.reaction
+            new_rxn = existing
+        else:
+            new_rxn = GroupMessageReaction(message_id=reaction_data.message_id, user_id=current_user.id, reaction=reaction_data.reaction)
+            db.add(new_rxn)
+        db.commit(); db.refresh(new_rxn)
+        await manager.send_group_message(msg.group_id, broadcast_payload)
+        
+    elif msg_type == "community":
+        msg = db.query(CommunityMessage).filter(CommunityMessage.id == reaction_data.message_id).first()
+        if not msg: raise HTTPException(404, "Message not found")
+        existing = db.query(CommunityReaction).filter(CommunityReaction.message_id == reaction_data.message_id, CommunityReaction.user_id == current_user.id).first()
+        if existing:
+            existing.reaction = reaction_data.reaction
+            new_rxn = existing
+        else:
+            new_rxn = CommunityReaction(message_id=reaction_data.message_id, user_id=current_user.id, reaction=reaction_data.reaction)
+            db.add(new_rxn)
+        db.commit(); db.refresh(new_rxn)
+        await manager.send_community_message(msg.school_id, broadcast_payload)
+    else:
+        raise HTTPException(status_code=400, detail=f"Invalid type '{msg_type}'.")
+    return new_rxn
+
+@router.delete("/react/{msg_type}/{message_id}")
+async def remove_reaction(msg_type: str, message_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    broadcast_payload = {"type": "remove_reaction", "message_id": message_id, "user_id": current_user.id}
+    if msg_type == "personal":
+        rxn = db.query(ChatReaction).filter(ChatReaction.message_id == message_id, ChatReaction.user_id == current_user.id).first()
+        if not rxn: raise HTTPException(404, "Reaction not found")
+        msg = db.query(ChatMessage).filter(ChatMessage.id == message_id).first()
+        db.delete(rxn); db.commit()
+        target_id = msg.receiver_id if msg.sender_id == current_user.id else msg.sender_id
+        await manager.send_personal_message(broadcast_payload, target_id)
+    elif msg_type == "group":
+        rxn = db.query(GroupMessageReaction).filter(GroupMessageReaction.message_id == message_id, GroupMessageReaction.user_id == current_user.id).first()
+        if not rxn: raise HTTPException(404, "Reaction not found")
+        msg = db.query(GroupMessage).filter(GroupMessage.id == message_id).first()
+        db.delete(rxn); db.commit()
+        await manager.send_group_message(msg.group_id, broadcast_payload)
+    elif msg_type == "community":
+        rxn = db.query(CommunityReaction).filter(CommunityReaction.message_id == message_id, CommunityReaction.user_id == current_user.id).first()
+        if not rxn: raise HTTPException(404, "Reaction not found")
+        msg = db.query(CommunityMessage).filter(CommunityMessage.id == message_id).first()
+        db.delete(rxn); db.commit()
+        await manager.send_community_message(msg.school_id, broadcast_payload)
+    return {"status": "success", "message": "Reaction removed"}
+
+@router.get("/groups")
+def get_user_groups(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role == "instructor":
+        groups = db.query(Group).filter(Group.instructor_id == current_user.id).all()
+    else:
+        groups = db.query(Group).join(GroupMember).filter(GroupMember.user_id == current_user.id).all()
+    results = []
+    for g in groups:
+        last_msg = db.query(GroupMessage).filter(GroupMessage.group_id == g.id).order_by(desc(GroupMessage.created_at)).first()
+        read_status = db.query(GroupReadStatus).filter(GroupReadStatus.user_id == current_user.id, GroupReadStatus.group_id == g.id).first()
+        last_viewed = read_status.last_read_at if read_status else datetime.min
+        unread_count = db.query(GroupMessage).filter(GroupMessage.group_id == g.id, GroupMessage.created_at > last_viewed, GroupMessage.sender_id != current_user.id).count()
+        results.append({
+            "id": g.id, "name": g.name, "last_message": last_msg.message if last_msg else "",
+            "last_message_time": last_msg.created_at.isoformat() if last_msg else None,
+            "unread_count": unread_count, "role": "group"
+        })
+    results.sort(key=lambda x: x["last_message_time"] or "", reverse=True)
+    return results
+
+@router.get("/groups/{group_id}/members")
+def get_group_members(group_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    group = db.query(Group).filter(Group.id == group_id).first()
+    if not group: raise HTTPException(status_code=404, detail="Group not found")
+    members = db.query(User).join(GroupMember).filter(GroupMember.group_id == group_id).all()
+    return [{"id": m.id, "fullname": m.fullname or m.username, "username": m.username, "role": getattr(m, 'role', 'student')} for m in members]
+
+@router.delete("/groups/{group_id}/members/{user_id}")
+def remove_group_member(group_id: int, user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    group = db.query(Group).filter(Group.id == group_id).first()
+    if not group: raise HTTPException(status_code=404, detail="Group not found")
+    if group.instructor_id != current_user.id: raise HTTPException(status_code=403, detail="Only the instructor can remove members")
+    member_entry = db.query(GroupMember).filter(GroupMember.group_id == group_id, GroupMember.user_id == user_id).first()
+    if not member_entry: raise HTTPException(status_code=404, detail="Member not found")
+    db.delete(member_entry); db.commit()
+    return {"status": "success", "message": "Member removed"}
+
+@router.delete("/delete/{msg_type}/{message_id}")
+async def delete_message(msg_type: str, message_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    model_map = {"personal": ChatMessage, "group": GroupMessage, "community": CommunityMessage}
+    if msg_type not in model_map: raise HTTPException(status_code=400, detail="Invalid message type")
+    model = model_map[msg_type]
+    msg = db.query(model).filter(model.id == message_id).first()
+    if not msg: raise HTTPException(status_code=404, detail="Message not found")
+    if msg.sender_id != current_user.id: raise HTTPException(status_code=403, detail="Forbidden")
+    db.delete(msg); db.commit()
+    broadcast_payload = {"type": "delete_message", "message_id": message_id}
+    if msg_type == "personal":
+        target_id = msg.receiver_id if msg.sender_id == current_user.id else msg.sender_id
+        await manager.send_personal_message(broadcast_payload, target_id)
+    elif msg_type == "group":
+        await manager.send_group_message(msg.group_id, broadcast_payload)
+    elif msg_type == "community":
+        await manager.send_community_message(msg.school_id, broadcast_payload)
+    return {"status": "success", "message": "Message deleted"}

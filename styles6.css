@@ -1,0 +1,92 @@
+/* Container Styling */
+#subscription {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Status Cards for Students */
+.status-card {
+    background: var(--bg-secondary, #f8f9fa);
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 5px solid #ccc;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.status-active {
+    color: #2ecc71;
+    font-weight: bold;
+    border-left-color: #2ecc71;
+}
+
+.status-inactive {
+    color: #e74c3c;
+    font-weight: bold;
+    border-left-color: #e74c3c;
+}
+
+/* Form Styling */
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+#subscription input, 
+#subscription select {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+#subscription button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+#subscription button:hover {
+    background-color: #0056b3;
+}
+
+/* Admin Voucher List */
+.voucher-item {
+    background: #fff;
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: monospace;
+}
+
+.voucher-item code {
+    background: #f1f1f1;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 1.1em;
+}
+
+.green { color: #2ecc71; font-weight: bold; }
+.red { color: #95a5a6; text-decoration: line-through; }
+
+/* Dark Mode support (if your dashboard uses it) */
+body.dark-mode .status-card, 
+body.dark-mode .card {
+    background: #2c2c2c;
+    color: #fff;
+}

@@ -37,3 +37,4 @@ class ChannelContent(Base):
 
 
     channel = relationship("Channel", back_populates="contents")
+

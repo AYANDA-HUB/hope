@@ -62,4 +62,5 @@ class UpdateProfile(BaseModel):
     def validate_phone(cls, v):
         if v and not re.fullmatch(r"0\d{9}", v):
             raise ValueError("Phone number must be a valid 10-digit South African number")
+
         return v

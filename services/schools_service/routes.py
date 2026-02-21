@@ -81,3 +81,4 @@ def get_school_stats(
         total_instructors=total_instructors,
         total_students=total_students
     )
+

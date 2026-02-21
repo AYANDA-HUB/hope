@@ -1,8 +1,8 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Use the MariaDB connector instead of PyMySQL
-DATABASE_URL = "mariadb+mariadbconnector://root:YourNewSecurePassword@127.0.0.1:3306/edusa_db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(
     DATABASE_URL,
@@ -17,10 +17,3 @@ SessionLocal = sessionmaker(
 )
 
 Base = declarative_base()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()

@@ -46,3 +46,4 @@ class ContentOut(BaseModel):
 
     class Config:
         orm_mode = True
+

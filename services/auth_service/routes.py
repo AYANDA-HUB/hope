@@ -57,8 +57,8 @@ def register_user(user: RegisterUser, db: Session = Depends(get_db)):
             fullname=user.fullname,
             role=user.role,
             phone_number=user.phone_number,
-            # FIX: Mapping the string "MvuziniH895" to the new column
-            school_username=user.school_username 
+            school_id= new_user.school_id
+        
         )
         db.add(new_user)
         db.commit()

@@ -6,3 +6,4 @@ class ContentViewResponse(BaseModel):
 
     class Config:
         from_attributes = True
+

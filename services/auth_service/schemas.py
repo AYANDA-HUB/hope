@@ -9,8 +9,7 @@ class RegisterUser(BaseModel):
     fullname: str
     role: str
     phone_number: str
-    # FIX: Changed from school_id: int to school_username: str
-    school_username: Optional[str] = None 
+    school_id: Optional[int] = None
 
     @field_validator("password")
     @classmethod
@@ -64,3 +63,4 @@ class UpdateProfile(BaseModel):
             raise ValueError("Phone number must be a valid 10-digit South African number")
 
         return v
+

@@ -1,4 +1,4 @@
-
+psycopg2-binary
 aiofiles==25.1.0
 alembic==1.18.4
 annotated-doc==0.0.4
@@ -93,3 +93,4 @@ typing_extensions==4.15.0
 urllib3==2.6.3
 uvicorn==0.40.0
 websockets==15.0.1
+

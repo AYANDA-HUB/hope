@@ -62,8 +62,10 @@ app.include_router(content_comments_router, dependencies=locked_deps)
 app.include_router(comment_reactions_router, dependencies=locked_deps)
 app.include_router(followers_router, dependencies=locked_deps)
 
-@app.get("/")
+@app.get("/api")
 def root():
-
     return {"message": "EduSA backend running 🚀"}
+
+app.mount("/", StaticFiles(directory="Frontend", html=True), name="frontend")
+
 

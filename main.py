@@ -27,6 +27,8 @@ load_dotenv()
 
 app = FastAPI(title="EduSA API")
 
+app.add_middleware(
+    CORSMiddleware,
     allow_origins=["*"],  # for now
     allow_credentials=True,
     allow_methods=["*"],
@@ -64,3 +66,4 @@ app.include_router(followers_router, dependencies=locked_deps)
 def root():
 
     return {"message": "EduSA backend running 🚀"}
+
